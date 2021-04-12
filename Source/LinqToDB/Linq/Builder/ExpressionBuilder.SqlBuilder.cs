@@ -1662,8 +1662,6 @@ namespace LinqToDB.Linq.Builder
 
 		ISqlPredicate ConvertPredicate(IBuildContext? context, Expression expression)
 		{
-			var isPredicate = true;
-
 			switch (expression.NodeType)
 			{
 				case ExpressionType.Equal              :
@@ -1747,7 +1745,6 @@ namespace LinqToDB.Linq.Builder
 						if (attr != null && attr.GetIsPredicate(expression))
 							break;
 
-						isPredicate = false;
 						break;
 					}
 
@@ -1756,19 +1753,6 @@ namespace LinqToDB.Linq.Builder
 							ConvertToSql(context, expression),
 							SqlPredicate.Operator.Equal,
 							new SqlValue(true), null);
-
-				case ExpressionType.MemberAccess :
-					{
-						var e = (MemberExpression)expression;
-
-						var attr = GetExpressionAttribute(e.Member);
-
-						if (attr != null && attr.GetIsPredicate(expression))
-							break;
-
-						isPredicate = false;
-						break;
-					}
 
 				case ExpressionType.TypeIs:
 					{
@@ -1788,22 +1772,13 @@ namespace LinqToDB.Linq.Builder
 						if (e.Type == typeof(bool) && e.Operand.Type == typeof(SqlBoolean))
 							return ConvertPredicate(context, e.Operand);
 
-						isPredicate = false;
 						break;
 					}
-
-				case ChangeTypeExpression.ChangeTypeType:
-					isPredicate = false;
-					break;
-
-				default:
-					isPredicate = false;
-					break;
 			}
 
 			var ex = ConvertToSql(context, expression);
 
-			if (SqlExpression.NeedsEqual(ex) || !isPredicate && SqlExpression.NeedsEqual(ex))
+			if (SqlExpression.NeedsEqual(ex))
 			{
 				var descriptor = QueryHelper.GetColumnDescriptor(ex);
 				var trueValue  = ConvertToSql(context, ExpressionHelper.TrueConstant,  false, descriptor);
