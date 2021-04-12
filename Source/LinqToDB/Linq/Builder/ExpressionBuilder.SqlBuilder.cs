@@ -1803,13 +1803,13 @@ namespace LinqToDB.Linq.Builder
 
 			var ex = ConvertToSql(context, expression);
 
-			if (!isPredicate && SqlExpression.NeedsEqual(ex))
+			if (SqlExpression.NeedsEqual(ex) || !isPredicate && SqlExpression.NeedsEqual(ex))
 			{
 				var descriptor = QueryHelper.GetColumnDescriptor(ex);
 				var trueValue  = ConvertToSql(context, ExpressionHelper.TrueConstant,  false, descriptor);
 				var falseValue = ConvertToSql(context, ExpressionHelper.FalseConstant, false, descriptor);
 
-				return new SqlPredicate.IsTrue(ex, trueValue, falseValue, Configuration.Linq.CompareNullsAsValues ? false : (bool?)null, false);
+				return new SqlPredicate.IsTrue(ex, trueValue, falseValue, Configuration.Linq.CompareNullsAsValues ? false : null, false);
 			}
 
 			return new SqlPredicate.Expr(ex);
