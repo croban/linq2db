@@ -383,15 +383,17 @@ namespace LinqToDB.SqlQuery
 		//
 		public class Like : BaseNotExpr
 		{
-			public Like(ISqlExpression exp1, bool isNot, ISqlExpression exp2, ISqlExpression? escape)
+			public Like(ISqlExpression exp1, bool isNot, ISqlExpression exp2, ISqlExpression? escape, string? functionName = null)
 				: base(exp1, isNot, SqlQuery.Precedence.Comparison)
 			{
-				Expr2     = exp2;
-				Escape    = escape;
+				Expr2        = exp2;
+				Escape       = escape;
+				FunctionName = functionName;
 			}
 
-			public ISqlExpression  Expr2     { get; internal set; }
-			public ISqlExpression? Escape    { get; internal set; }
+			public ISqlExpression  Expr2        { get; internal set; }
+			public ISqlExpression? Escape       { get; internal set; }
+			public string?         FunctionName { get; internal set; }
 
 			protected override void Walk(WalkOptions options, Func<ISqlExpression,ISqlExpression> func)
 			{
@@ -403,7 +405,7 @@ namespace LinqToDB.SqlQuery
 
 			public override IQueryElement Invert()
 			{
-				return new Like(Expr1, !IsNot, Expr2, Escape);
+				return new Like(Expr1, !IsNot, Expr2, Escape, FunctionName);
 			}
 
 			protected override ICloneableElement Clone(Dictionary<ICloneableElement,ICloneableElement> objectTree, Predicate<ICloneableElement> doClone)
@@ -413,7 +415,7 @@ namespace LinqToDB.SqlQuery
 
 				if (!objectTree.TryGetValue(this, out var clone))
 					objectTree.Add(this, clone = new Like(
-						(ISqlExpression)Expr1.Clone(objectTree, doClone), IsNot, (ISqlExpression)Expr2.Clone(objectTree, doClone), Escape));
+						(ISqlExpression)Expr1.Clone(objectTree, doClone), IsNot, (ISqlExpression)Expr2.Clone(objectTree, doClone), Escape, FunctionName));
 
 				return clone;
 			}
@@ -425,7 +427,8 @@ namespace LinqToDB.SqlQuery
 				Expr1.ToString(sb, dic);
 
 				if (IsNot) sb.Append(" NOT");
-				sb.Append(" LIKE ");
+
+				sb.Append(' ').Append(FunctionName ?? "LIKE").Append(' ');
 
 				Expr2.ToString(sb, dic);
 

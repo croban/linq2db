@@ -6,7 +6,6 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LinqToDB.Linq.Builder
@@ -18,7 +17,6 @@ namespace LinqToDB.Linq.Builder
 	using Mapping;
 	using Reflection;
 	using SqlQuery;
-	using SqlProvider;
 	using Tools;
 	using System.Threading;
 
@@ -1662,6 +1660,19 @@ namespace LinqToDB.Linq.Builder
 
 		ISqlPredicate ConvertPredicate(IBuildContext? context, Expression expression)
 		{
+			static bool IsIgnoreCase(MethodCallExpression mc)
+			{
+				if (mc.Arguments.Count <= 1)
+					return !Configuration.Linq.IsStringSearchCaseSensitive;
+
+				var comparison = mc.Arguments[1].EvaluateExpression();
+				if (comparison is not StringComparison sc)
+					return !Configuration.Linq.IsStringSearchCaseSensitive;
+
+				return sc.In(StringComparison.CurrentCultureIgnoreCase, StringComparison.InvariantCultureIgnoreCase,
+					StringComparison.OrdinalIgnoreCase);
+			}
+
 			var isPredicate = true;
 
 			switch (expression.NodeType)
@@ -1690,9 +1701,9 @@ namespace LinqToDB.Linq.Builder
 						{
 							switch (e.Method.Name)
 							{
-								case "Contains"   : predicate = CreateStringPredicate(context, e, SqlPredicate.SearchString.SearchKind.Contains);   break;
-								case "StartsWith" : predicate = CreateStringPredicate(context, e, SqlPredicate.SearchString.SearchKind.StartsWith); break;
-								case "EndsWith"   : predicate = CreateStringPredicate(context, e, SqlPredicate.SearchString.SearchKind.EndsWith);   break;
+								case "Contains"   : predicate = CreateStringPredicate(context, e, SqlPredicate.SearchString.SearchKind.Contains,   IsIgnoreCase(e)); break;
+								case "StartsWith" : predicate = CreateStringPredicate(context, e, SqlPredicate.SearchString.SearchKind.StartsWith, IsIgnoreCase(e)); break;
+								case "EndsWith"   : predicate = CreateStringPredicate(context, e, SqlPredicate.SearchString.SearchKind.EndsWith,   IsIgnoreCase(e)); break;
 							}
 						}
 						else if (e.Method.Name == "Contains")
@@ -2740,13 +2751,13 @@ namespace LinqToDB.Linq.Builder
 
 		#region LIKE predicate
 
-		ISqlPredicate CreateStringPredicate(IBuildContext? context, MethodCallExpression expression, SqlPredicate.SearchString.SearchKind kind)
+		ISqlPredicate CreateStringPredicate(IBuildContext? context, MethodCallExpression expression, SqlPredicate.SearchString.SearchKind kind, bool ignoreCase)
 		{
 			var e = expression;
 			var o = ConvertToSql(context, e.Object);
 			var a = ConvertToSql(context, e.Arguments[0]);
 
-			return new SqlPredicate.SearchString(o, false, a, kind, true);
+			return new SqlPredicate.SearchString(o, false, a, kind, ignoreCase);
 		}
 
 		ISqlPredicate ConvertLikePredicate(IBuildContext context, MethodCallExpression expression)

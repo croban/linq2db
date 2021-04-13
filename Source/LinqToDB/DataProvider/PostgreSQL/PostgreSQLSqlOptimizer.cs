@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using LinqToDB.Linq;
 
 namespace LinqToDB.DataProvider.PostgreSQL
 {
 	using Extensions;
 	using SqlProvider;
 	using SqlQuery;
+	using Linq;
+	using Mapping;
 
 	class PostgreSQLSqlOptimizer : BasicSqlOptimizer
 	{
@@ -271,6 +271,19 @@ namespace LinqToDB.DataProvider.PostgreSQL
 			statement.Update.Table = tableToUpdate;
 
 			return statement;
+		}
+
+		public override ISqlPredicate ConvertSearchStringPredicate(MappingSchema mappingSchema, SqlPredicate.SearchString predicate, ConvertVisitor visitor,
+			OptimizationContext optimizationContext)
+		{
+			var searchPredicate = ConvertSearchStringPredicateViaLike(mappingSchema, predicate, visitor, optimizationContext);
+
+			if (predicate.IgnoreCase && searchPredicate is SqlPredicate.Like likePredicate)
+			{
+				searchPredicate = new SqlPredicate.Like(likePredicate.Expr1, likePredicate.IsNot, likePredicate.Expr2, likePredicate.Escape, "ILIKE");
+			}
+
+			return searchPredicate;
 		}
 
 		public override ISqlExpression ConvertExpressionImpl(ISqlExpression expression, ConvertVisitor visitor,
