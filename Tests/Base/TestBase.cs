@@ -1614,12 +1614,12 @@ namespace Tests
 	{
 		public WithoutContainsNullCheck()
 		{
-			Configuration.Linq.CheckNullInContains = false;
+			Configuration.Linq.CheckNullsInContains = false;
 		}
 
 		public void Dispose()
 		{
-			Configuration.Linq.CheckNullInContains = true;
+			Configuration.Linq.CheckNullsInContains = true;
 			Query.ClearCaches();
 		}
 	}
