@@ -181,6 +181,14 @@ namespace LinqToDB.SqlQuery
 						break;
 					}
 
+				case QueryElementType.IsDistinctPredicate:
+					{
+						var p = (SqlPredicate.IsDistinct)element;
+						Visit1(p.Expr1);
+						Visit1(p.Expr2);
+						break;
+					}
+
 				case QueryElementType.InSubQueryPredicate:
 					{
 						Visit1(((SqlPredicate.InSubQuery)element).Expr1);
@@ -782,6 +790,14 @@ namespace LinqToDB.SqlQuery
 						break;
 					}
 
+				case QueryElementType.IsDistinctPredicate:
+					{
+						var p = (SqlPredicate.IsDistinct)element;
+						Visit2(p.Expr1);
+						Visit2(p.Expr2);
+						break;
+					}
+
 				case QueryElementType.InSubQueryPredicate:
 					{
 						Visit2(((SqlPredicate.InSubQuery)element).Expr1);
@@ -1344,6 +1360,14 @@ namespace LinqToDB.SqlQuery
 							Find(((SqlPredicate.IsTrue)element).Expr1) ?? 
 							Find(((SqlPredicate.IsTrue)element).TrueValue) ??
 							Find(((SqlPredicate.IsTrue)element).FalseValue);
+					}
+
+				case QueryElementType.IsDistinctPredicate:
+					{
+						var p = (SqlPredicate.IsDistinct)element;
+						return 
+							Find(p.Expr1) ?? 
+							Find(p.Expr2);
 					}
 
 				case QueryElementType.SqlBinaryExpression:
